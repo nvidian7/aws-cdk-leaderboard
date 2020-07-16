@@ -133,6 +133,10 @@ __pycache__
 .pytest_cache
 .env
 *.egg-info
+lambda/lib
+.vscode
+*.code-workspace
+cdk.context.json
 
 # CDK asset staging directory
 .cdk.staging
