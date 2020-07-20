@@ -137,6 +137,7 @@ lambda/lib
 .vscode
 *.code-workspace
 cdk.context.json
+.lambda_dependencies
 
 # CDK asset staging directory
 .cdk.staging

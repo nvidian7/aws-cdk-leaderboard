@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+import subprocess
 from pathlib import Path
 from tg_leaderboard.tg_leaderboard_stack import TgLeaderboardStack
 from aws_cdk import (
@@ -6,7 +8,10 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_apigateway as _apigw,
     aws_elasticache as _elasticache,
-    aws_ec2 as _ec2
+    aws_ec2 as _ec2,
+    aws_logs as _logs,
+    aws_events as _events,
+    aws_events_targets as _event_targets
 )
 
 
@@ -48,7 +53,11 @@ class LeaderBoardStack(core.Stack):
                                                'lambda'),
                                            memory_size=128,
                                            vpc=vpc,
-                                           security_group=security_group
+                                           security_group=security_group,
+                                           timeout=core.Duration.seconds(10),
+                                           log_retention=_logs.RetentionDays.ONE_WEEK,
+                                           layers=[self.create_dependencies_layer(
+                                               "tg-leaderboard", "lambda")]
                                            )
 
         lambda_function.add_environment("REDIS_HOST", elasticache_host)
@@ -80,6 +89,23 @@ class LeaderBoardStack(core.Stack):
             lambda_function))
 
         self.add_cors_options(root_api)
+        # self.enable_cron(lambda_function)
+
+    def create_dependencies_layer(self, project_name, function_name: str) -> _lambda.LayerVersion:
+        requirements_file = function_name + "/" + "requirements.txt"
+        output_dir = ".lambda_dependencies/" + function_name
+
+        # Install requirements for layer in the output_dir
+        if not os.environ.get("SKIP_PIP"):
+            # Note: Pip will create the output dir if it does not exist
+            subprocess.check_call(
+                f"pip install -r {requirements_file} -t {output_dir}/python".split()
+            )
+        return _lambda.LayerVersion(
+            self,
+            project_name + "-" + function_name + "-dependencies",
+            code=_lambda.Code.from_asset(output_dir)
+        )
 
     def add_cors_options(self, apigw_resource):
         apigw_resource.add_method('OPTIONS', _apigw.MockIntegration(
@@ -103,6 +129,25 @@ class LeaderBoardStack(core.Stack):
                 }
             }]
         )
+
+
+def enable_cron(self, lambda_fn):
+    # Schedule @ lambda_fn every minute
+    rule = _events.Rule(
+        self, "Rule",
+        schedule=_events.Schedule.cron(
+            minute='*',
+            hour='*',
+            month='*',
+            week_day='*',
+            year='*'),
+    )
+
+    # A toy input event.  You can add multiple inputs/targets, for example
+    # scheduling many servers to be scanned by a scheduled lambda in parallel
+    input_event = _events.RuleTargetInput.from_object(dict(foo="bar"))
+    rule.add_target(_event_targets.LambdaFunction(
+        lambda_fn, event=input_event))
 
 
 test_env = core.Environment(account="854806466257", region="ap-northeast-2")

@@ -1,9 +1,9 @@
 import os
-import lib.redis as redis
+import redis
 import json
 import traceback
 import time
-from lib.lambdarest import create_lambda_handler
+from lambdarest import create_lambda_handler
 import sys
 
 lua_script_get_my_rank = """
@@ -69,7 +69,7 @@ def get_user_score(event, leader_board_id, user_id):
     if data is None:
         raise UserNotFoundException("user not found")
 
-    return {data[1]: {"rank": data[0], "score": data[2]}}
+    return {"userId": data[1], "rank": data[0], "score": data[2]}
 
 
 @lambda_handler.handle("get", path="/<string:leader_board_id>/top")
@@ -94,7 +94,7 @@ def get_top_rank_scores(event, leader_board_id):
     response = []
 
     for idx, data in enumerate(rank_data, start=offset+1):
-        response.append({data[0]: {"rank": idx, "score": data[1]}})
+        response.append({"userId": data[0], "rank": idx, "score": data[1]})
 
     return response
 
@@ -120,7 +120,7 @@ def get_around_rank_scores(event, leader_board_id, user_id):
         lua_script_get_around, 1, leader_board_id, user_id, limit)
 
     for data in [rank_data[i:(i+3)] for i in range(0, len(rank_data), 3)]:
-        response.append({data[1]: {"rank": data[0], "score": data[2]}})
+        response.append({"userId": data[1], "rank": data[0], "score": data[2]})
 
     return response
 
