@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import logging
 from pathlib import Path
 from tg_leaderboard.tg_leaderboard_stack import TgLeaderboardStack
 from aws_cdk import (
