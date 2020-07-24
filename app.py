@@ -12,7 +12,8 @@ from aws_cdk import (
     aws_ec2 as _ec2,
     aws_logs as _logs,
     aws_events as _events,
-    aws_events_targets as _event_targets
+    aws_events_targets as _event_targets,
+    aws_s3 as _s3
 )
 
 
@@ -30,6 +31,11 @@ class LeaderBoardStack(core.Stack):
         security_group = _ec2.SecurityGroup.from_security_group_id(
             self, id="Security Group", security_group_id="sg-4fd0662b")
 
+        # define s3 bucket for redis data backup
+        # do not use RemovalPolicy.DESTORY on production, use RemovalPolicy.RETAIN instead
+        # bucket: s3.Bucket = _s3.Bucket(self, "RankingDataBackup", removal_policy=core.RemovalPolicy.DESTROY)
+
+        # define elasticache for ranking
         elasticache = _elasticache.CfnCacheCluster(
             self,
             id="LeaderBoardElasticache",
