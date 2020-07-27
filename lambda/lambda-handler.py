@@ -125,22 +125,19 @@ def get_around_rank_scores(event, leader_board_id, user_id):
     return response
 
 
-@lambda_handler.handle("put", path="/<string:leader_board_id>/<string:user_id>/<int:score>")
+@ lambda_handler.handle("put", path="/<string:leader_board_id>/<string:user_id>/<int:score>")
 def put_score(event, leader_board_id, user_id, score):
-    #timestamp = 5000000000 - int(time.time())
-    #str(score) + "." + str(timestamp)
-    redis_client.zadd(leader_board_id, ch=True, mapping={
-                      user_id: score})
+    redis_client.zadd(leader_board_id, ch=True, mapping={user_id: score})
     return
 
 
-@lambda_handler.handle("post", path="/<string:leader_board_id>/<string:user_id>/<string:delta>")
+@ lambda_handler.handle("post", path="/<string:leader_board_id>/<string:user_id>/<string:delta>")
 def incr_score(event, leader_board_id, user_id, delta):
     redis_client.zincrby(leader_board_id, int(delta), user_id)
     return
 
 
-@lambda_handler.handle("get")
+@ lambda_handler.handle("get")
 def default_handle(event):
     return {"this": "will be json dumped"}
 
