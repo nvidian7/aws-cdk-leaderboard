@@ -16,20 +16,26 @@ from aws_cdk import (
     aws_s3 as _s3
 )
 
+service_id = "hexonia"
+aws_exists_vpc_id = "vpc-69f45702"
+aws_security_group_id = "sg-4fd0662b"
+aws_account_id = "854806466257"
+aws_default_region = "ap-northeast-2"
+
 
 class LeaderBoardStack(core.Stack):
 
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-        vpc = _ec2.Vpc.from_lookup(self, id="vpc", vpc_id="vpc-69f45702")
+        vpc = _ec2.Vpc.from_lookup(self, id="vpc", vpc_id=aws_exists_vpc_id)
         subnet_group = _elasticache.CfnSubnetGroup(self,
                                                    id="subnet-group",
                                                    description="The redis subnet group",
                                                    subnet_ids=list(map(lambda s: s.subnet_id, vpc.private_subnets)))
 
         security_group = _ec2.SecurityGroup.from_security_group_id(
-            self, id="Security Group", security_group_id="sg-4fd0662b")
+            self, id="Security Group", security_group_id=aws_security_group_id)
 
         # define s3 bucket for redis data backup
         # do not use RemovalPolicy.DESTORY on production, use RemovalPolicy.RETAIN instead
@@ -157,8 +163,9 @@ def enable_cron(self, lambda_fn):
         lambda_fn, event=input_event))
 
 
-test_env = core.Environment(account="854806466257", region="ap-northeast-2")
+env_variables = core.Environment(
+    account=aws_account_id, region=aws_default_region)
 
 app = core.App()
-LeaderBoardStack(app, "LeaderBoardStack", env=test_env)
+LeaderBoardStack(app, "LeaderBoardStack", env=env_variables)
 app.synth()
