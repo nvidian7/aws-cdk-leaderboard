@@ -98,8 +98,7 @@ class LeaderBoardStack(core.Stack):
                             }])
 
         entity = root_api.add_resource("{proxy+}")
-        entity.add_method("ANY", _apigw.LambdaIntegration(
-            lambda_function))
+        entity.add_method("ANY", _apigw.LambdaIntegration(lambda_function))
 
         self.add_cors_options(root_api)
         # self.enable_cron(lambda_function)
