@@ -143,24 +143,24 @@ class LeaderBoardStack(core.Stack):
             }]
         )
 
+    # cron job을 위해서 이벤트 발생기 추가하는 함수
+    def enable_cron(self, lambda_fn):
+        # Schedule @ lambda_fn every minute
+        rule = _events.Rule(
+            self, "Rule",
+            schedule=_events.Schedule.cron(
+                minute='*',
+                hour='*',
+                month='*',
+                week_day='*',
+                year='*'),
+        )
 
-def enable_cron(self, lambda_fn):
-    # Schedule @ lambda_fn every minute
-    rule = _events.Rule(
-        self, "Rule",
-        schedule=_events.Schedule.cron(
-            minute='*',
-            hour='*',
-            month='*',
-            week_day='*',
-            year='*'),
-    )
-
-    # A toy input event.  You can add multiple inputs/targets, for example
-    # scheduling many servers to be scanned by a scheduled lambda in parallel
-    input_event = _events.RuleTargetInput.from_object(dict(foo="bar"))
-    rule.add_target(_event_targets.LambdaFunction(
-        lambda_fn, event=input_event))
+        # A toy input event.  You can add multiple inputs/targets, for example
+        # scheduling many servers to be scanned by a scheduled lambda in parallel
+        input_event = _events.RuleTargetInput.from_object(dict(foo="bar"))
+        rule.add_target(_event_targets.LambdaFunction(
+            lambda_fn, event=input_event))
 
 
 env_variables = core.Environment(
