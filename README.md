@@ -56,3 +56,84 @@ command.
  * `cdk docs`        open CDK documentation
 
 Enjoy!
+
+
+# Leaderboard API
+
+Simple Serverless Leaderboard API. It uses
+
+- `AWS API Gateway` and `AWS Lambda` to serve this Web API with Serverless model.
+- `Redis` to sort & store score
+
+## Documentation
+
+### GET
+
+#### Get `me` only
+
+Request `GET` to `/{serviceId}/{period}/{userId}`
+
+```bash
+$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/{userId}"
+{
+  "rank": 321,
+  "userId": "test",
+  "score": "123456789123456789"
+}
+```
+
+#### Get `top` with `offset` and `limit`
+
+Request `GET` to `/{serviceId}/{leaderBoardId}/top?offset=<number>&limit=<number>`.
+
+```bash
+$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/top?offset=0&limit=10"
+[{
+  "rank": 1,
+  "user": "test",
+  "score": "123456789123456789"
+}, ...]
+```
+
+#### Get `around` with `limit`
+
+Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}/around?limit=<number>`
+
+```bash
+$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/user_id/around?limit=10"
+[..., {
+  "rank": 321,
+  "user": "test",
+  "score": "123456789123456789"
+}, ...]
+```
+
+### PUT
+
+Request `PUT` to `/{serviceId}/{period}`
+
+- **This API doesn't update a record when an old score is higher than a new score.**
+
+```bash
+$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/leaderboard_id/user_id" 
+{
+  "rank": 321,
+  "user": "test",
+  "score": "123456789123456789"
+}
+```
+
+### CLEAR
+
+For admin purpose, it supports `CLEAR` command via `DELETE` request.
+
+```bash
+curl -XDELETE "https://API-DOMAIN/STAGE/service_id/leaderboard_id" -H "X-Auth: admin-secret-token"
+```
+
+But if `process.env.AUTH_KEY` isn't set while deploying, `X-Auth` can be omitted and it can lead very horrible problem, that is resetting all of ranks by anonymous.
+
+## Deployment
+
+1. Initial deploy : `cdk bootstrap` -> `cdk synth` -> `cdk deploy` command from your shell.
+2. After editing some codes, deploy this stack via `cdk deploy` command.
