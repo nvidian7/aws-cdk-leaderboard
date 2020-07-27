@@ -17,6 +17,7 @@ from aws_cdk import (
 )
 
 service_id = "hexonia"
+admin_secret_token = "togglegear-token"
 aws_exists_vpc_id = "vpc-69f45702"
 aws_security_group_id = "sg-4fd0662b"
 aws_account_id = "854806466257"
@@ -75,6 +76,8 @@ class LeaderBoardStack(core.Stack):
 
         lambda_function.add_environment("REDIS_HOST", elasticache_host)
         lambda_function.add_environment("REDIS_PORT", elasticache_port)
+        lambda_function.add_environment(
+            "ADMIN_SECRET_TOKEN", admin_secret_token)
 
         base_api = _apigw.RestApi(self, 'LeaderBoardApi',
                                   rest_api_name='LeaderBoardApi')
