@@ -1,7 +1,9 @@
 
 # Simple leaderboard project
 
-This is a project for mobile game leaderboard service via aws cdk as a IaC.
+## Prepare CDK deploy & development environment
+
+This is a project for mobile game leaderboard service via aws cdk as a IaC(Infrastructure as code).
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -47,16 +49,13 @@ To add additional dependencies, for example other CDK libraries, just add
 them to your `setup.py` file and rerun the `pip install -r requirements.txt`
 command.
 
-## Useful commands
+### Useful commands
 
  * `cdk ls`          list all stacks in the app
  * `cdk synth`       emits the synthesized CloudFormation template
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
-
-Enjoy!
-
 
 # Leaderboard API
 
@@ -82,45 +81,63 @@ $ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test"
 }
 ```
 
-#### Get `top` with `offset` and `limit`
+#### Get `top` with `offset` and `limit` and `properties`
 
-Request `GET` to `/{serviceId}/{leaderBoardId}/top?offset=<number>&limit=<number>`.
+Request `GET` to `/{serviceId}/{leaderBoardId}/top?offset=<number>&limit=<number>&properties=<flag>`.
 
 ```bash
-$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/top?offset=0&limit=10"
+$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/top?offset=0&limit=10&properties=true"
 [{
   "rank": 1,
   "userId": "test",
-  "score": 123456789123456789
+  "score": 123456789123456789,
+  "properties" : {
+      "nickname" : "dennis"
+  }
 }, ...]
 ```
 
 #### Get `around` with `limit`
 
-Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}/around?limit=<number>`
+Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}/around?limit=<number>&properties=<flag>`
 
 ```bash
-$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test/around?limit=10"
+$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test/around?limit=10&properties=true"
 [..., {
   "rank": 321,
   "userId": "test",
-  "score": 123456789123456789
+  "score": 123456789123456789,
+  "properties" : {
+      "nickname" : "dennis"
+   }
 }, ...]
 ```
 
 ### PUT
+
+#### Put user's score
 
 Request `PUT` to `/{serviceId}/{leaderBoardId}`
 
 - **This API doesn't update a record when an old score is higher than a new score.**
 
 ```bash
-$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/leaderboard_id/test" 
+$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/leaderboard_id/test"
 {
   "rank": 321,
   "userId": "test",
   "score": 123456789123456789
 }
+```
+
+### PUT
+
+#### Put service scope user property
+
+Request `PUT` to `/{serviceId}/{userId}`
+
+```bash
+$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/test" -d '{ "properties": { "nickname" : "def" } }'
 ```
 
 ### CLEAR
