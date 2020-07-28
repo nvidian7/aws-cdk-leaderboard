@@ -1,7 +1,7 @@
 
-# Welcome to your CDK Python project!
+# Simple leaderboard project
 
-This is a blank project for Python development with CDK.
+This is a project for mobile game leaderboard service via aws cdk as a IaC.
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -69,16 +69,16 @@ Simple Serverless Leaderboard API. It uses
 
 ### GET
 
-#### Get `me` only
+#### Get specific user only
 
-Request `GET` to `/{serviceId}/{period}/{userId}`
+Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}`
 
 ```bash
-$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/{userId}"
+$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test"
 {
   "rank": 321,
   "userId": "test",
-  "score": "123456789123456789"
+  "score": 123456789123456789
 }
 ```
 
@@ -90,8 +90,8 @@ Request `GET` to `/{serviceId}/{leaderBoardId}/top?offset=<number>&limit=<number
 $ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/top?offset=0&limit=10"
 [{
   "rank": 1,
-  "user": "test",
-  "score": "123456789123456789"
+  "userId": "test",
+  "score": 123456789123456789
 }, ...]
 ```
 
@@ -100,26 +100,26 @@ $ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/top?offset=0&limit=1
 Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}/around?limit=<number>`
 
 ```bash
-$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/user_id/around?limit=10"
+$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test/around?limit=10"
 [..., {
   "rank": 321,
-  "user": "test",
-  "score": "123456789123456789"
+  "userId": "test",
+  "score": 123456789123456789
 }, ...]
 ```
 
 ### PUT
 
-Request `PUT` to `/{serviceId}/{period}`
+Request `PUT` to `/{serviceId}/{leaderBoardId}`
 
 - **This API doesn't update a record when an old score is higher than a new score.**
 
 ```bash
-$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/leaderboard_id/user_id" 
+$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/leaderboard_id/test" 
 {
   "rank": 321,
-  "user": "test",
-  "score": "123456789123456789"
+  "userId": "test",
+  "score": 123456789123456789
 }
 ```
 

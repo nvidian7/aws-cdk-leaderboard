@@ -9,7 +9,7 @@ setuptools.setup(
     name="tg_leaderboard",
     version="0.0.1",
 
-    description="An empty CDK Python app",
+    description="Simple leaderboard service",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
@@ -19,7 +19,7 @@ setuptools.setup(
     packages=setuptools.find_packages(where="tg_leaderboard"),
 
     install_requires=[
-        "aws-cdk.core==1.50.0",
+        "aws-cdk.core==1.54.0",
     ],
 
     python_requires=">=3.6",
