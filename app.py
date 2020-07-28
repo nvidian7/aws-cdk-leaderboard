@@ -61,23 +61,19 @@ class LeaderBoardStack(core.Stack):
         elasticache_port = elasticache.attr_redis_endpoint_port
 
         lambda_function = _lambda.Function(self, "LeaderBoardFunction",
-                                           handler='lambda-handler.handler',
+                                           handler='lambda_handler.handler',
                                            runtime=_lambda.Runtime.PYTHON_3_8,
-                                           code=_lambda.Code.from_asset(
-                                               'lambda'),
+                                           code=_lambda.Code.from_asset('lambda'),
                                            memory_size=128,
                                            vpc=vpc,
                                            security_group=security_group,
                                            timeout=core.Duration.seconds(10),
                                            log_retention=_logs.RetentionDays.ONE_WEEK,
-                                           layers=[self.create_dependencies_layer(
-                                               "tg-leaderboard", "lambda")]
-                                           )
+                                           layers=[self.create_dependencies_layer("tg-leaderboard", "lambda")])
 
         lambda_function.add_environment("REDIS_HOST", elasticache_host)
         lambda_function.add_environment("REDIS_PORT", elasticache_port)
-        lambda_function.add_environment(
-            "ADMIN_SECRET_TOKEN", admin_secret_token)
+        lambda_function.add_environment("ADMIN_SECRET_TOKEN", admin_secret_token)
 
         base_api = _apigw.RestApi(self, 'LeaderBoardApi',
                                   rest_api_name='LeaderBoardApi')
@@ -165,8 +161,7 @@ class LeaderBoardStack(core.Stack):
             lambda_fn, event=input_event))
 
 
-env_variables = core.Environment(
-    account=aws_account_id, region=aws_default_region)
+env_variables = core.Environment(account=aws_account_id, region=aws_default_region)
 
 app = core.App()
 LeaderBoardStack(app, "LeaderBoardStack", env=env_variables)
