@@ -5,8 +5,8 @@ import traceback
 from lambdarest import create_lambda_handler
 import sys
 from timestamp import get_reverse_timestamp
-from leaderboard_exceptions import UserNotFoundException, InvalidRequestException
-from leaderboard_scripts import lua_script_get_around, lua_script_get_my_rank, lua_script_put_score
+from leaderboard_exceptions import UserNotFoundException, InvalidRequestException, AccessDeniedException
+from leaderboard_scripts import lua_script_get_around, lua_script_get_my_rank, lua_script_put_score, lua_script_delete_score
 
 admin_secret_token = os.environ.get('ADMIN_SECRET_TOKEN')
 
@@ -31,7 +31,13 @@ def user_properties_key_str(service_id: str, user_id: str):
     return f'{service_id}:user:{user_id}:properties'
 
 
-@lambda_handler.handle("get", path="/<string:service_id>/<string:leader_board_id>/<string:user_id>")
+@lambda_handler.handle("get", path="/<string:service_id>/leaderboards/<string:leader_board_id>")
+def get_leaderboard_status(event, service_id, leader_board_id):
+    cardinality = redis_client.hlen(leaderboard_timestamp_str(service_id, leader_board_id))
+    return {"cardinality": cardinality}
+
+
+@lambda_handler.handle("get", path="/<string:service_id>/leaderboards/<string:leader_board_id>/<string:user_id>")
 def get_user_score(event, service_id, leader_board_id, user_id):
     data = redis_client.eval(lua_script_get_my_rank, 2,
                              leaderboard_str(service_id, leader_board_id),
@@ -53,8 +59,18 @@ def get_user_score(event, service_id, leader_board_id, user_id):
     return response
 
 
+@lambda_handler.handle("delete", path="/<string:service_id>/leaderboards/<string:leader_board_id>/<string:user_id>")
+def delete_user_score(event, service_id, leader_board_id, user_id):
+    redis_client.eval(lua_script_delete_score, 2,
+                      leaderboard_str(service_id, leader_board_id),
+                      leaderboard_timestamp_str(service_id, leader_board_id),
+                      user_id)
+    return
+
 # pick top rank of leader board
-@lambda_handler.handle("get", path="/<string:service_id>/<string:leader_board_id>/top")
+
+
+@lambda_handler.handle("get", path="/<string:service_id>/leaderboards/<string:leader_board_id>/top")
 def get_top_rank_scores(event, service_id, leader_board_id):
     query_param_dict = event.get("json", {}).get("query", {})
     # if exlicit limit query parameter not exists then apply fetch default count
@@ -86,7 +102,7 @@ def get_top_rank_scores(event, service_id, leader_board_id):
     return response
 
 
-@lambda_handler.handle("get", path="/<string:service_id>/<string:leader_board_id>/<string:user_id>/around")
+@lambda_handler.handle("get", path="/<string:service_id>/leaderboards/<string:leader_board_id>/<string:user_id>/around")
 def get_around_rank_scores(event, service_id, leader_board_id, user_id):
     query_param_dict = event.get("json", {}).get("query", {})
 
@@ -123,7 +139,7 @@ def get_around_rank_scores(event, service_id, leader_board_id, user_id):
     return response
 
 
-@lambda_handler.handle("put", path="/<string:service_id>/<string:leader_board_id>/<string:user_id>")
+@lambda_handler.handle("put", path="/<string:service_id>/leaderboards/<string:leader_board_id>/<string:user_id>")
 def put_score(event, service_id, leader_board_id, user_id):
     if event["body"] is None:
         raise InvalidRequestException("request parameter invalid")
@@ -140,10 +156,12 @@ def put_score(event, service_id, leader_board_id, user_id):
     if body["score"] < 0:
         raise ValueError("score parameter must be positive value.")
 
-    redis_client.eval(lua_script_put_score, 2,
-                      leaderboard_str(service_id, leader_board_id),
-                      leaderboard_timestamp_str(service_id, leader_board_id),
-                      user_id, body["score"], get_reverse_timestamp())
+    prev_score = redis_client.eval(lua_script_put_score, 2,
+                                   leaderboard_str(service_id, leader_board_id),
+                                   leaderboard_timestamp_str(service_id, leader_board_id),
+                                   user_id, body["score"], get_reverse_timestamp())
+
+    return {"prevScore": prev_score}
 
     # lboard_user_id = redis_client.hget(leaderboard_timestamp_str(
     #     service_id, leader_board_id), user_id)
@@ -179,16 +197,27 @@ def put_score(event, service_id, leader_board_id, user_id):
 #         service_id, leader_board_id), body["delta"], user_id)
 #     return
 
-@lambda_handler.handle("put", path="/<string:service_id>/<string:user_id>")
+@lambda_handler.handle("put", path="/<string:service_id>/users/<string:user_id>")
 def put_user_property(event, service_id, user_id):
     body = json.loads(event["body"])
     if "properties" in body:
-        redis_client.set(user_properties_key_str(
-            service_id, user_id), json.dumps(body["properties"]))
+        redis_client.set(user_properties_key_str(service_id, user_id), json.dumps(body["properties"]))
     return
 
 
+@lambda_handler.handle("delete", path="/<string:service_id>/leaderboards/<string:leader_board_id>")
+def delete_leader_board(event, service_id, leader_board_id):
+    auth_token = event.get("headers", {}).get("X-Auth", "")
+
+    if auth_token != admin_secret_token:
+        raise AccessDeniedException("Invalid authentication")
+
+    redis_client.delete(leaderboard_str(service_id, leader_board_id), leaderboard_timestamp_str(service_id, leader_board_id))
+    return
+
 # for debug purpose
+
+
 # @lambda_handler.handle("get")
 # def get_default_handle(event):
 #     return event
@@ -209,6 +238,13 @@ def handler(event, context):
             "statusCode": "404",
             "body": json.dumps({
                 "message": str(kerror)
+            })
+        }
+    except AccessDeniedException as perror:
+        return {
+            "statusCode": "403",
+            "body": json.dumps({
+                "message": str(perror)
             })
         }
     except Exception as ex:

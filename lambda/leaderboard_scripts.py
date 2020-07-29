@@ -76,4 +76,17 @@ if new_score > prev_score then
   redis.call('ZADD', leaderboard_id, new_score, timestamp .. ":" .. user_id)
   redis.call('HSET', timestamp_hash_set_id, user_id, timestamp)
 end
+
+return prev_score
+"""
+
+lua_script_delete_score = """
+local leaderboard_id, timestamp_hash_set_id = KEYS[1], KEYS[2]
+local user_id = ARGV[1]
+local stored_update_timestamp = redis.call('HGET', timestamp_hash_set_id, user_id)
+
+if stored_update_timestamp then
+  redis.call('ZREM', leaderboard_id, stored_update_timestamp .. ":" .. user_id)
+  redis.call('HDEL', leaderboard_id, timestamp_hash_set_id)
+end
 """
