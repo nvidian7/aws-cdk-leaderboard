@@ -52,8 +52,6 @@ command.
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
 
-
-
 # Leaderboard API
 
 Simple Serverless Leaderboard API. It uses
@@ -91,7 +89,7 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}"
 
 #### Get specific user only
 
-Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}?properties=<flag>`
+Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}?properties=<flag>`
 
 ```bash
 $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
@@ -148,9 +146,7 @@ Request `PUT` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}`
 ```bash
 $ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
 {
-  "rank": 321,
-  "userId": "{userId}",
-  "score": 123456789123456789
+  "prevScore" : 100
 }
 ```
 
