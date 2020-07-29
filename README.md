@@ -7,12 +7,7 @@ This is a project for mobile game leaderboard service via aws cdk as a IaC(Infra
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the .env
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+This project is set up like a standard Python project.  The initialization process also creates a virtualenv within this project, stored under the .env directory.  To create the virtualenv it assumes that there is a `python3`(or `python` for Windows) executable in your path with access to the `venv` package. If for any reason the automatic creation of the virtualenv fails, you can create the virtualenv manually.
 
 To manually create a virtualenv on MacOS and Linux:
 
@@ -57,6 +52,8 @@ command.
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
 
+
+
 # Leaderboard API
 
 Simple Serverless Leaderboard API. It uses
@@ -64,32 +61,59 @@ Simple Serverless Leaderboard API. It uses
 - `AWS API Gateway` and `AWS Lambda` to serve this Web API with Serverless model.
 - `Redis` to sort & store score
 
+## Overview
+
+- `GET` /{serviceId}/leaderboards/{leaderBoardId}
+- `GET` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
+- `GET` /{serviceId}/leaderboards/{leaderBoardId}/top
+- `GET` /{serviceId}/leaderboards/{leaderBoardId}/{userId}/around
+
+- `PUT` /{serviceId}/users/{userId}
+- `PUT` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
+
+- `DELETE` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
+- `DELETE` /{serviceId}/leaderboards/{leaderBoardId}
+
 ## Documentation
 
 ### GET
 
-#### Get specific user only
+#### Get specific leaderboard metadata
 
-Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}`
+Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}`
 
 ```bash
-$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test"
+$ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}"
+{
+  "cardinality" : 331
+}
+```
+
+#### Get specific user only
+
+Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}?properties=<flag>`
+
+```bash
+$ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
 {
   "rank": 321,
-  "userId": "test",
-  "score": 123456789123456789
+  "userId": "{userId}",
+  "score": 123456789123456789,
+  "properties" : {
+      "nickname" : "dennis"
+  }
 }
 ```
 
 #### Get `top` with `offset` and `limit` and `properties`
 
-Request `GET` to `/{serviceId}/{leaderBoardId}/top?offset=<number>&limit=<number>&properties=<flag>`.
+Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/top?offset=<number>&limit=<number>&properties=<flag>`.
 
 ```bash
-$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/top?offset=0&limit=10&properties=true"
+$ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/top?offset=0&limit=10&properties=true"
 [{
   "rank": 1,
-  "userId": "test",
+  "userId": "{userId}",
   "score": 123456789123456789,
   "properties" : {
       "nickname" : "dennis"
@@ -97,18 +121,18 @@ $ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/top?offset=0&limit=1
 }, ...]
 ```
 
-#### Get `around` with `limit`
+#### Get `around` with `limit` and `properties`
 
-Request `GET` to `/{serviceId}/{leaderBoardId}/{userId}/around?limit=<number>&properties=<flag>`
+Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}/around?limit=<number>&properties=<flag>`
 
 ```bash
-$ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test/around?limit=10&properties=true"
+$ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}/around?limit=10&properties=true"
 [..., {
   "rank": 321,
-  "userId": "test",
+  "userId": "{userId}",
   "score": 123456789123456789,
   "properties" : {
-      "nickname" : "dennis"
+      "nickname" : "John Doe"
    }
 }, ...]
 ```
@@ -117,35 +141,43 @@ $ curl "https://API-DOMAIN/STAGE/service_id/leader_board_id/test/around?limit=10
 
 #### Put user's score
 
-Request `PUT` to `/{serviceId}/{leaderBoardId}`
+Request `PUT` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}`
 
 - **This API doesn't update a record when an old score is higher than a new score.**
 
 ```bash
-$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/leaderboard_id/test"
+$ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
 {
   "rank": 321,
-  "userId": "test",
+  "userId": "{userId}",
   "score": 123456789123456789
 }
 ```
 
-### PUT
-
 #### Put service scope user property
 
-Request `PUT` to `/{serviceId}/{userId}`
+Request `PUT` to `/{serviceId}/users/{userId}`
 
 ```bash
-$ curl -XPUT "https://API-DOMAIN/STAGE/service_id/test" -d '{ "properties": { "nickname" : "def" } }'
+$ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/users/{userId}" -d '{ "properties": { "nickname" : "John Doe" } }'
 ```
 
-### CLEAR
+### DELETE
+
+#### Delete user's score
+
+Request `DELETE` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}`
+
+```bash
+$ curl -XDELETE "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
+```
+
+#### Delete leaderboard
 
 For admin purpose, it supports `CLEAR` command via `DELETE` request.
 
 ```bash
-curl -XDELETE "https://API-DOMAIN/STAGE/service_id/leaderboard_id" -H "X-Auth: admin-secret-token"
+curl -XDELETE "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}" -H "X-Auth: admin-secret-token"
 ```
 
 But if `process.env.AUTH_KEY` isn't set while deploying, `X-Auth` can be omitted and it can lead very horrible problem, that is resetting all of ranks by anonymous.
