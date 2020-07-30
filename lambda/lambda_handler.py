@@ -2,13 +2,15 @@ import os
 import redis
 import json
 import traceback
-from lambdarest import create_lambda_handler
 import sys
+from lambdarest import create_lambda_handler
 from timestamp import get_reverse_timestamp
 from leaderboard_exceptions import UserNotFoundException, InvalidRequestException, AccessDeniedException
 from leaderboard_scripts import lua_script_get_around, lua_script_get_my_rank, lua_script_put_score, lua_script_delete_score
 
-admin_secret_token = os.environ.get('ADMIN_SECRET_TOKEN')
+ADMIN_SECRET_TOKEN = os.environ.get('ADMIN_SECRET_TOKEN')
+DEFAULT_FETCH_COUNT = int(os.environ.get('DEFAULT_FETCH_COUNT'))
+MAX_FETCH_COUNT = int(os.environ.get('MAX_FETCH_COUNT'))
 
 redis_client = redis.StrictRedis(
     host=os.environ.get('REDIS_HOST'),
@@ -74,14 +76,14 @@ def delete_user_score(event, service_id, leader_board_id, user_id):
 def get_top_rank_scores(event, service_id, leader_board_id):
     query_param_dict = event.get("json", {}).get("query", {})
     # if exlicit limit query parameter not exists then apply fetch default count
-    limit = query_param_dict.get("limit", 100)
+    limit = query_param_dict.get("limit", DEFAULT_FETCH_COUNT)
     offset = query_param_dict.get("offset", 0)
 
     if limit <= 0:
         raise ValueError("limit parameter must be positive value.")
 
     # limit fetch count to prevent too huge fetch
-    limit = min(limit, 1000)
+    limit = min(limit, MAX_FETCH_COUNT)
 
     rank_data = redis_client.zrevrange(leaderboard_str(service_id, leader_board_id), offset, offset+limit-1, withscores=True)
     # rank_data = redis_client.zrevrangebyscore(
@@ -113,7 +115,7 @@ def get_around_rank_scores(event, service_id, leader_board_id, user_id):
         raise ValueError("limit parameter must be positive value.")
 
     # limit count for prevent huge fetch
-    limit = min(limit, 10)
+    limit = min(limit, MAX_FETCH_COUNT)
 
     # rank_data = redis_client.zrevrangebyscore(
     #     leader_board_id, "+inf", "-inf", withscores=True, start=0, num=limit)
@@ -179,7 +181,7 @@ def put_score(event, service_id, leader_board_id, user_id):
     # stamped_user_id = timestamp_user_id(user_id, update_timestamp)
     # redis_client.zadd(leaderboard_str(
     #     service_id, leader_board_id), ch=True, mapping={stamped_user_id: body["score"]})
-    return
+    # return
 
 
 # @lambda_handler.handle("post", path="/<string:service_id>/<string:leader_board_id>/<string:user_id>")
@@ -209,7 +211,7 @@ def put_user_property(event, service_id, user_id):
 def delete_leader_board(event, service_id, leader_board_id):
     auth_token = event.get("headers", {}).get("X-Auth", "")
 
-    if auth_token != admin_secret_token:
+    if auth_token != ADMIN_SECRET_TOKEN:
         raise AccessDeniedException("Invalid authentication")
 
     redis_client.delete(leaderboard_str(service_id, leader_board_id), leaderboard_timestamp_str(service_id, leader_board_id))
@@ -233,18 +235,18 @@ def handler(event, context):
                 "message": str(verror)
             })
         }
-    except UserNotFoundException as kerror:
-        return {
-            "statusCode": "404",
-            "body": json.dumps({
-                "message": str(kerror)
-            })
-        }
     except AccessDeniedException as perror:
         return {
             "statusCode": "403",
             "body": json.dumps({
                 "message": str(perror)
+            })
+        }
+    except UserNotFoundException as kerror:
+        return {
+            "statusCode": "404",
+            "body": json.dumps({
+                "message": str(kerror)
             })
         }
     except Exception as ex:

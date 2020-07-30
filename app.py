@@ -2,8 +2,9 @@
 import os
 import subprocess
 import logging
+import environment
 from pathlib import Path
-from tg_leaderboard.tg_leaderboard_stack import TgLeaderboardStack
+from tg_leaderboard_stack import TgLeaderboardStack
 from aws_cdk import (
     core,
     aws_lambda as _lambda,
@@ -16,27 +17,20 @@ from aws_cdk import (
     aws_s3 as _s3
 )
 
-service_id = "hexonia"
-admin_secret_token = "togglegear-token"
-aws_exists_vpc_id = "vpc-69f45702"
-aws_security_group_id = "sg-4fd0662b"
-aws_account_id = "854806466257"
-aws_default_region = "ap-northeast-2"
-
 
 class LeaderBoardStack(core.Stack):
 
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-        vpc = _ec2.Vpc.from_lookup(self, id="vpc", vpc_id=aws_exists_vpc_id)
+        vpc = _ec2.Vpc.from_lookup(self, id="vpc", vpc_id=environment.AWS_VPC_ID)
         subnet_group = _elasticache.CfnSubnetGroup(self,
                                                    id="subnet-group",
                                                    description="The redis subnet group",
                                                    subnet_ids=list(map(lambda s: s.subnet_id, vpc.private_subnets)))
 
         security_group = _ec2.SecurityGroup.from_security_group_id(
-            self, id="Security Group", security_group_id=aws_security_group_id)
+            self, id="Security Group", security_group_id=environment.AWS_SECURITY_GROUP_ID)
 
         # define s3 bucket for redis data backup
         # do not use RemovalPolicy.DESTORY on production, use RemovalPolicy.RETAIN instead
@@ -73,10 +67,11 @@ class LeaderBoardStack(core.Stack):
 
         lambda_function.add_environment("REDIS_HOST", elasticache_host)
         lambda_function.add_environment("REDIS_PORT", elasticache_port)
-        lambda_function.add_environment("ADMIN_SECRET_TOKEN", admin_secret_token)
+        lambda_function.add_environment("ADMIN_SECRET_TOKEN", environment.ADMIN_SECRET_TOKEN)
+        lambda_function.add_environment("DEFAULT_FETCH_COUNT", str(environment.DEFAULT_FETCH_COUNT))
+        lambda_function.add_environment("MAX_FETCH_COUNT", str(environment.MAX_FETCH_COUNT))
 
-        base_api = _apigw.RestApi(self, 'LeaderBoardApi',
-                                  rest_api_name='LeaderBoardApi')
+        base_api = _apigw.RestApi(self, 'LeaderBoardApi', rest_api_name='LeaderBoardApi')
 
         root_api = base_api.root
         entity_lambda_integration = _apigw.LambdaIntegration(lambda_function, proxy=True, integration_responses=[
@@ -161,8 +156,12 @@ class LeaderBoardStack(core.Stack):
             lambda_fn, event=input_event))
 
 
-env_variables = core.Environment(account=aws_account_id, region=aws_default_region)
-
 app = core.App()
-LeaderBoardStack(app, "LeaderBoardStack", env=env_variables)
+
+LeaderBoardStack(scope=app,
+                 id="LeaderBoardStack",
+                 env=core.Environment(
+                     account=environment.AWS_ACCOUNT_ID,
+                     region=environment.AWS_DEFAULT_REGION))
+
 app.synth()

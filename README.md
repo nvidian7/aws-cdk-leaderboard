@@ -1,5 +1,41 @@
+# Simple leaderboard project for game service
 
-# Simple leaderboard project
+Amazone AWS CDK(Cloud Development Kit)를 이용한 IaC(Infrastructure as code) 구성
+
+## 개발&배포 환경 구성하기
+
+- Node.js 12.18.2 이상
+- Python 3.7 이상
+
+```bash
+npm install -g aws-cdk
+```
+
+```bash
+python -m venv .env
+source .env/bin/activate or .env/bin/activate.bat
+python install -r requirements.txt
+```
+
+프로젝트 디렉토리 루트의 environment.py에 세부 설정을 수정합니다.
+
+```python
+# Service metadata
+SERVICE_ID = "shadow-of-eclipse"
+ADMIN_SECRET_TOKEN = "secret-token"
+
+# AWS configuration
+AWS_VPC_ID = "vpc-69f45702"
+AWS_SECURITY_GROUP_ID = "sg-4fd0662b"
+AWS_ACCOUNT_ID = "123456789000"
+AWS_DEFAULT_REGION = "ap-northeast-2"
+
+# Leaderboard configuration
+DEFAULT_FETCH_COUNT = 100
+MAX_FETCH_COUNT = 1000
+```
+
+
 
 ## Prepare CDK deploy & development environment
 
@@ -51,6 +87,8 @@ command.
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
+
+더 자세한 정보는 aws-cdk 문서를 참조하세요.
 
 # Leaderboard API
 
