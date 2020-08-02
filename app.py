@@ -4,7 +4,6 @@ import subprocess
 import logging
 import environment
 from pathlib import Path
-from tg_leaderboard_stack import TgLeaderboardStack
 from aws_cdk import (
     core,
     aws_lambda as _lambda,
@@ -23,7 +22,8 @@ class LeaderBoardStack(core.Stack):
     def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
 
-        vpc = _ec2.Vpc.from_lookup(self, id="vpc", vpc_id=environment.AWS_VPC_ID)
+        vpc = _ec2.Vpc.from_lookup(
+            self, id="vpc", vpc_id=environment.AWS_VPC_ID)
         subnet_group = _elasticache.CfnSubnetGroup(self,
                                                    id="subnet-group",
                                                    description="The redis subnet group",
@@ -57,7 +57,8 @@ class LeaderBoardStack(core.Stack):
         lambda_function = _lambda.Function(self, "LeaderBoardFunction",
                                            handler='lambda_handler.handler',
                                            runtime=_lambda.Runtime.PYTHON_3_8,
-                                           code=_lambda.Code.from_asset('lambda'),
+                                           code=_lambda.Code.from_asset(
+                                               'lambda'),
                                            memory_size=128,
                                            vpc=vpc,
                                            security_group=security_group,
@@ -67,11 +68,15 @@ class LeaderBoardStack(core.Stack):
 
         lambda_function.add_environment("REDIS_HOST", elasticache_host)
         lambda_function.add_environment("REDIS_PORT", elasticache_port)
-        lambda_function.add_environment("ADMIN_SECRET_TOKEN", environment.ADMIN_SECRET_TOKEN)
-        lambda_function.add_environment("DEFAULT_FETCH_COUNT", str(environment.DEFAULT_FETCH_COUNT))
-        lambda_function.add_environment("MAX_FETCH_COUNT", str(environment.MAX_FETCH_COUNT))
+        lambda_function.add_environment(
+            "ADMIN_SECRET_TOKEN", environment.ADMIN_SECRET_TOKEN)
+        lambda_function.add_environment(
+            "DEFAULT_FETCH_COUNT", str(environment.DEFAULT_FETCH_COUNT))
+        lambda_function.add_environment(
+            "MAX_FETCH_COUNT", str(environment.MAX_FETCH_COUNT))
 
-        base_api = _apigw.RestApi(self, 'LeaderBoardApi', rest_api_name='LeaderBoardApi')
+        base_api = _apigw.RestApi(
+            self, 'LeaderBoardApi', rest_api_name='LeaderBoardApi')
 
         root_api = base_api.root
         entity_lambda_integration = _apigw.LambdaIntegration(lambda_function, proxy=True, integration_responses=[
