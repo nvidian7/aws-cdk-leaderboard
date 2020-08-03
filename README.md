@@ -1,20 +1,42 @@
-# Simple leaderboard project for game service
+# Simple leaderboard for game service
 
 Amazone AWS CDK(Cloud Development Kit)를 이용한 IaC(Infrastructure as code) 구성
 
-## 개발&배포 환경 구성하기
+## 환경 구성하기
 
 - Node.js 12.18.2 이상
 - Python 3.7 이상
+
+CDK를 통한 IaC 구성에 어떤 언어를 사용하더라도 aws cdk command line tool 자체는 npm을 통한 global 설치가 필요합니다.
 
 ```bash
 npm install -g aws-cdk
 ```
 
+이 프로젝트는 표준 Python 프로젝트 형태로 구성되어있습니다. 시작하기 전에 virtualenv를 설정하여 이 프로젝트의 개발&배포 환경이 전역적인 Python 환경에 영향을 주지 않도록 설정합니다.
+
+프로젝트 디렉토리의 최상위에 virtualenv를 .env라는 이름으로 생성합니다.
+
 ```bash
-python -m venv .env
-source .env/bin/activate or .env/bin/activate.bat
-python install -r requirements.txt
+$ python -m venv .env
+```
+
+virtualenv가 생성되었으면, 활성화 해줍니다. 이 단계는 개발&배포가 필요할때마다 반복적으로 수행되어야합니다.
+
+```bash
+$ source .env/bin/activate
+```
+
+만약 Windows를 사용하고 있다면, batch 파일을 통해서 virtualenv를 활성화 합니다.
+
+```bash
+% .env\Scripts\activate.bat
+```
+
+virtualenv가 활성화 되었으면, requirements.txt에 서술되어있는 dependency들을 venv에 설치합니다.
+
+```bash
+$ pip install -r requirements.txt
 ```
 
 프로젝트 디렉토리 루트의 environment.py에 세부 설정을 수정합니다.
@@ -35,52 +57,35 @@ DEFAULT_FETCH_COUNT = 100
 MAX_FETCH_COUNT = 1000
 ```
 
+엄밀하게는 IaC라고 할 수 없지만, 기존에 이미 사용하고 있던 AWS 계정과의 통합을 목표로하였기 때문에 추가적인 VPC와 SecurityGroup을 생성하지 않고 사용중인 계정의 vpc와 security group을 lookup 하여 lambda 및 elasticache를 통합합니다. 때문에 설정파일에서 배포 대상이 될 기존 계정의 vpc와 security group 식별자를 정확히 설정하여야 합니다. 기존에 사용하던 vpc 및 security group이 없다면 aws console이나 aws-cli를 통하여 수동으로 생성 후 통합을 시도하세요.
 
+여기까지 진행했으면 이 프로젝트를 위해서 정의된 CloudFormation 문법을 생성해 볼 수 있습니다. 
 
-## Prepare CDK deploy & development environment
-
-This is a project for mobile game leaderboard service via aws cdk as a IaC(Infrastructure as code).
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-This project is set up like a standard Python project.  The initialization process also creates a virtualenv within this project, stored under the .env directory.  To create the virtualenv it assumes that there is a `python3`(or `python` for Windows) executable in your path with access to the `venv` package. If for any reason the automatic creation of the virtualenv fails, you can create the virtualenv manually.
-
-To manually create a virtualenv on MacOS and Linux:
-
-```
-$ python -m venv .env
-```
-
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .env/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .env\Scripts\activate.bat
-```
-
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
+```bash
 $ cdk synth
 ```
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+프로젝트에 추가 의존성이 필요한 경우 프로젝트 디렉토리 최상위의 requirements.txt에 의존성을 추가할 수 있습니다. 이 파일에는 배포환경과 리더보드 기능 개발환경이 합쳐진 의존성이 모두 기술되며, lambda의 동작(Runtime)에 필요한 의존성의 경우 lambda 디렉토리 안의 requirements.txt에 해당 의존성만 별도로 추가하는 과정이 필요합니다. 
 
-### Useful commands
+## 배포하기
+
+### 최초 배포
+
+최초 배포시에는 bootstrap 명령을 통해서 배포를 위한 aws s3 bucket 등이 생성되어야 합니다.
+
+```bash
+$ cdk bootstrap
+$ cdk synth
+$ cdk deploy
+```
+
+이후에는 `cdk deploy` 명령어를 통해서 반복적으로 배포할 수 있습니다.
+
+```bash
+cdk deploy
+```
+
+### CDK Command Line Tool 명령어
 
  * `cdk ls`          list all stacks in the app
  * `cdk synth`       emits the synthesized CloudFormation template
@@ -88,33 +93,56 @@ command.
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
 
-더 자세한 정보는 aws-cdk 문서를 참조하세요.
+더 자세한 정보는 [aws-cdk](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) 문서를 참조하세요.
+
+# Limitation
+
+TBD
 
 # Leaderboard API
 
-Simple Serverless Leaderboard API. It uses
+- `AWS API Gateway` 와 `AWS Lambda` 로 구성된 서버리스 모델로 별도의 Computing 인스턴스 관리가 필요 없습니다.
+- 유저별 점수의 저장 및 정렬은 `Redis` 를 이용합니다.
 
-- `AWS API Gateway` and `AWS Lambda` to serve this Web API with Serverless model.
-- `Redis` to sort & store score
-
-## Overview
+## Endpoints
 
 - `GET` /{serviceId}/leaderboards/{leaderBoardId}
 - `GET` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
 - `GET` /{serviceId}/leaderboards/{leaderBoardId}/top
 - `GET` /{serviceId}/leaderboards/{leaderBoardId}/{userId}/around
-
 - `PUT` /{serviceId}/users/{userId}
 - `PUT` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
-
 - `DELETE` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
 - `DELETE` /{serviceId}/leaderboards/{leaderBoardId}
 
-## Documentation
+## URL Query Parameter
+
+### {limit=<number>}
+
+한번에 획득할 수 있는 랭킹 데이터의 수를 제한합니다. 명시적으로 지정하지 않은 경우에는 `environment.py` 에 설정된 기본값 (`DEFAULT_FETCH_COUNT`)을 따릅니다.  최대값은 `environment.py` 의 `MAX_FETCH_COUNT` 값으로 제한되며 그 이상의 값을 지정해도 내부적으로 최대값으로 처리됩니다.
+
+### {offset=<number>}
+
+top 랭킹 조회에서 획득을 시작할 offset을 입력합니다. 예를 들어 10을 입력한 경우 10위부터 상위점수 랭킹을 획득합니다. 최대 cardinality 보다 큰 값을 입력했을 경우 비어있는 json array가 반환됩니다.
+
+### {properties=<boolean>}
+
+랭킹 정보를 획득시에 서비스 범위 안에서 유효한 유저의 custom property를 포함합니다. 별도로 지정하지 않을시 `false`이며 property를 같이 조회하는 않는 쪽이 성능상 이점이 큽니다.
+
+## Common Response
+
+- `HTTP 400 Error` : 잘못된 요청이나 범위를 벗어난 요청인 경우의 응답입니다 ( 예를들면, 최고 점수 갱신 API에 음수를 입력 )
+- `HTTP 403 Error` : 관리용으로 제공하는 `리더보드 삭제 API`의 `token` 인증이 실패한 경우
+- `HTTP 404 Error` : 존재하지 않는 유저의 점수와 랭킹을 요청한 경우입니다. 잘못된 URL호출이 아닌 API에서 404 Error를 응답하는 경우에는 response body에 포함된 `message` 필드를 참조하여 문제를 해결하세요.
+- `HTTP 500 Error` : 기타 식별되지 않은 모든 예외와 에러는 500 을 반환합니다.
+
+## Example
 
 ### GET
 
-#### Get specific leaderboard metadata
+#### 리더보드의 metadata를 획득 
+
+현재는 해당 리더보드에 등록된 user의 수(cardinality)만 제공합니다.
 
 Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}`
 
@@ -125,7 +153,7 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}"
 }
 ```
 
-#### Get specific user only
+#### 특정 유저의 점수 획득
 
 Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}?properties=<flag>`
 
@@ -141,7 +169,7 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userI
 }
 ```
 
-#### Get `top` with `offset` and `limit` and `properties`
+#### 최상위 랭킹 획득
 
 Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/top?offset=<number>&limit=<number>&properties=<flag>`.
 
@@ -157,7 +185,7 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/top?of
 }, ...]
 ```
 
-#### Get `around` with `limit` and `properties`
+#### 특정 유저 주변에 위치한 랭킹 정보 획득
 
 Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}/around?limit=<number>&properties=<flag>`
 
@@ -175,30 +203,45 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userI
 
 ### PUT
 
-#### Put user's score
+#### 유저의 최고 점수 갱신
+
+갱신에 성공한 경우 갱신되기 이전의 점수를 응답으로 회신합니다. ( 유저의 개인 최대 스코어 갱신등에 유용하게 쓰일 수 있습니다. )
 
 Request `PUT` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}`
 
-- **This API doesn't update a record when an old score is higher than a new score.**
+- **이 API는 기록된 점수 보다 낮은 점수로는 갱신하지 않습니다.**
+
+Request
 
 ```bash
-$ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
+$ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}" \ 
+-d '{
+  "score" : 100
+}'
+```
+
+Response
+
+```bash
 {
-  "prevScore" : 100
+    "prevScore": 0
 }
 ```
 
-#### Put service scope user property
+#### 서비스에 범위의 유저 속성 갱신
+
+부분 업데이트가 아닌 유저의 property 전체를 업데이트합니다.
 
 Request `PUT` to `/{serviceId}/users/{userId}`
 
 ```bash
-$ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/users/{userId}" -d '{ "properties": { "nickname" : "John Doe" } }'
+$ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/users/{userId}" \ 
+-d '{ "properties": { "nickname" : "John Doe" } }'
 ```
 
 ### DELETE
 
-#### Delete user's score
+#### 유저 점수 삭제
 
 Request `DELETE` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}`
 
@@ -206,17 +249,10 @@ Request `DELETE` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}`
 $ curl -XDELETE "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
 ```
 
-#### Delete leaderboard
+#### 리더보드 제거
 
-For admin purpose, it supports `CLEAR` command via `DELETE` request.
+관리목적으로 리더보드 자체를 삭제하는 기능을 제공합니다. 이 요청은 다른 요청과 다르게 environment.py에 설정하는 secret token 값을 헤더에 포함하여 요청합니다.
 
 ```bash
-curl -XDELETE "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}" -H "X-Auth: admin-secret-token"
+$ curl -XDELETE "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}" -H "X-Auth: admin-secret-token"
 ```
-
-But if `process.env.AUTH_KEY` isn't set while deploying, `X-Auth` can be omitted and it can lead very horrible problem, that is resetting all of ranks by anonymous.
-
-## Deployment
-
-1. Initial deploy : `cdk bootstrap` -> `cdk synth` -> `cdk deploy` command from your shell.
-2. After editing some codes, deploy this stack via `cdk deploy` command.

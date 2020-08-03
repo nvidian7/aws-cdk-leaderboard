@@ -6,23 +6,20 @@ with open("README.md") as fp:
 
 
 setuptools.setup(
-    name="tg_leaderboard",
-    version="0.0.1",
+    name="hx_leaderboard",
+    version="1.0.0",
 
-    description="Simple leaderboard service",
+    description="Simple Leaderboard Service",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
-    author="author",
-
-    package_dir={"": "tg_leaderboard"},
-    packages=setuptools.find_packages(where="tg_leaderboard"),
+    author="styx",
 
     install_requires=[
         "aws-cdk.core==1.54.0",
     ],
 
-    python_requires=">=3.6",
+    python_requires=">=3.7",
 
     classifiers=[
         "Development Status :: 4 - Beta",
