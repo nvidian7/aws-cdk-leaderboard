@@ -6,6 +6,7 @@ Amazone AWS CDK(Cloud Development Kit)를 이용한 IaC(Infrastructure as code) 
 
 - Node.js 12.18.2 이상
 - Python 3.7 이상
+- AWS CLI 2 이상
 
 CDK를 통한 IaC 구성에 어떤 언어를 사용하더라도 aws cdk command line tool 자체는 npm을 통한 global 설치가 필요합니다.
 
@@ -65,7 +66,25 @@ MAX_FETCH_COUNT = 1000
 $ cdk synth
 ```
 
-프로젝트에 추가 의존성이 필요한 경우 프로젝트 디렉토리 최상위의 requirements.txt에 의존성을 추가할 수 있습니다. 이 파일에는 배포환경과 리더보드 기능 개발환경이 합쳐진 의존성이 모두 기술되며, lambda의 동작(Runtime)에 필요한 의존성의 경우 lambda 디렉토리 안의 requirements.txt에 해당 의존성만 별도로 추가하는 과정이 필요합니다. 
+프로젝트에 추가 의존성이 필요한 경우 프로젝트 디렉토리 최상위의 requirements.txt에 의존성을 추가할 수 있습니다. 
+
+```bash
+$ pip install pyredis
+$ pip install flask
+```
+
+이 파일에는 배포 및 구성을 위한 AWS CDK 의존성과 lambda 로직 개발환경을 위한 AWS SDK, 기타 서드파티 모듈 의존성이 모두 추가됩니다.  하지만 배포 과정에서 lambda asset이 패키징되어 로컬 개발환경의 서드파티 모듈의 의존성이 함께 배포되지 않기 때문에, 이 프로젝트에서는 별도의 의존성 lambda layer를 추가로 생성&배포합니다. 
+
+Python AWS CDK 모듈들은 lambda asset에 포함될 필요가 없으므로, 가벼운 의존성 lambda layer생성을 위해 runtime에서만 필요한 모듈의 명세를 작성할 필요가 있습니다. 
+
+이 lambda runtime 만을 위한 python 모듈 의존성은 lambda/requirements.txt 파일에 수동으로 추가되어야 합니다.
+
+| 경로                                           | 용도                          |
+| ---------------------------------------------- | ----------------------------- |
+| {projectRootDirectory}/requirements.txt        | CDK + 3rd Party python module |
+| {projectRootDirectory}/lambda/requirements.txt | Only 3rd Party python module  |
+
+
 
 ## 배포하기
 
@@ -117,15 +136,15 @@ TBD
 
 ## URL Query Parameter
 
-### {limit=<number>}
+### limit=(number)
 
 한번에 획득할 수 있는 랭킹 데이터의 수를 제한합니다. 명시적으로 지정하지 않은 경우에는 `environment.py` 에 설정된 기본값 (`DEFAULT_FETCH_COUNT`)을 따릅니다.  최대값은 `environment.py` 의 `MAX_FETCH_COUNT` 값으로 제한되며 그 이상의 값을 지정해도 내부적으로 최대값으로 처리됩니다.
 
-### {offset=<number>}
+### offset=(number)
 
 top 랭킹 조회에서 획득을 시작할 offset을 입력합니다. 예를 들어 10을 입력한 경우 10위부터 상위점수 랭킹을 획득합니다. 최대 cardinality 보다 큰 값을 입력했을 경우 비어있는 json array가 반환됩니다.
 
-### {properties=<boolean>}
+### properties(boolean)
 
 랭킹 정보를 획득시에 서비스 범위 안에서 유효한 유저의 custom property를 포함합니다. 별도로 지정하지 않을시 `false`이며 property를 같이 조회하는 않는 쪽이 성능상 이점이 큽니다.
 
