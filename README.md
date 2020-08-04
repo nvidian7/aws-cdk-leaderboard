@@ -125,6 +125,7 @@ cdk deploy
 
 - `AWS API Gateway` 와 `AWS Lambda` 로 구성된 서버리스 모델로 별도의 Computing 인스턴스 관리가 필요 없습니다.
 - 유저별 점수의 저장 및 정렬은 `Redis` 를 이용합니다.
+- 이 API는 [Microsoft RESTful API Guidelines](https://docs.microsoft.com/ko-kr/azure/architecture/best-practices/api-design) 문서의 Interface 디자인 지침을 참고하였습니다.
 
 ## Endpoints
 
