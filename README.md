@@ -101,8 +101,24 @@ $ cdk deploy
 이후에는 `cdk deploy` 명령어를 통해서 반복적으로 배포할 수 있습니다.
 
 ```bash
-cdk deploy
+$ cdk deploy
+
+LeaderBoardStack: deploying...
+[0%] start: Publishing 3ba2d0737747b3ff8365406a17e61e6ffa75160eb00513b101f0695bb883d5e5:current
+[33%] success: Published 3ba2d0737747b3ff8365406a17e61e6ffa75160eb00513b101f0695bb883d5e5:current
+[33%] start: Publishing 6faf017571f4d6871aa1cd9ffbadd8bf74e1924d60c47ea2a5987a896c7c436c:current
+[66%] success: Published 6faf017571f4d6871aa1cd9ffbadd8bf74e1924d60c47ea2a5987a896c7c436c:current
+[66%] start: Publishing 27b58c1b3f137723c1cdbb881058a4b21230873b55318044de2a913e607a49f9:current
+[100%] success: Published 27b58c1b3f137723c1cdbb881058a4b21230873b55318044de2a913e607a49f9:current
+LeaderBoardStack: creating CloudFormation changeset...
+ 0/9 | 12:10:03 ├F10: PM┤ | UPDATE_IN_PROGRESS   | AWS::CloudFormation::Stack     | LeaderBoardStack User Initiated
+
+... omitted ...
+
+ 2/9 | 12:11:05 ├F10: PM┤ | UPDATE_COMPLETE      | AWS::CloudFormation::Stack     | LeaderBoardStack
 ```
+
+
 
 ### CDK Command Line Tool 명령어
 
@@ -114,6 +130,8 @@ cdk deploy
 
 더 자세한 정보는 [aws-cdk](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html) 문서를 참조하세요.
 
+
+
 # Limitation
 
 - 0 이하 값의 저장 및 정렬을 지원하지 않습니다.
@@ -121,11 +139,15 @@ cdk deploy
 - 상대적으로 작은 값이 상위의 순위를 가지는 오름차순 정렬을 지원하지 않습니다. ( 타임어택 랭킹 )
 - 동점자의 상대 정렬은 먼저 해당 점수를 달성한 시간순 정렬로 고정됩니다.
 
+
+
 # Leaderboard API
 
 - `AWS API Gateway` 와 `AWS Lambda` 로 구성된 서버리스 모델로 별도의 Computing 인스턴스 관리가 필요 없습니다.
 - 유저별 점수의 저장 및 정렬은 `Redis` 를 이용합니다.
 - 이 API는 [Microsoft RESTful API Guidelines](https://docs.microsoft.com/ko-kr/azure/architecture/best-practices/api-design) 문서의 Interface 디자인 지침을 참고하였습니다.
+
+
 
 ## Endpoints
 
@@ -137,6 +159,8 @@ cdk deploy
 - `PUT` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
 - `DELETE` /{serviceId}/leaderboards/{leaderBoardId}/{userId}
 - `DELETE` /{serviceId}/leaderboards/{leaderBoardId}
+
+
 
 ## URL Query Parameter
 
@@ -160,9 +184,28 @@ top 랭킹 조회에서 획득을 시작할 offset을 입력합니다. 예를 �
 - `HTTP 404 Error` : 존재하지 않는 유저의 점수와 랭킹을 요청한 경우입니다. 잘못된 URL호출이 아닌 API에서 404 Error를 응답하는 경우에는 response body에 포함된 `message` 필드를 참조하여 문제를 해결하세요.
 - `HTTP 500 Error` : 기타 식별되지 않은 모든 예외와 에러는 500 을 반환합니다.
 
+
+
 ## Example
 
 ### GET
+
+#### 서비스 리더보드 목록
+
+특정 서비스에 존재하는 리더보드 ID 목록을 획득합니다.
+
+Request `GET` to `/{serviceId}/leaderboards`
+
+```bash
+$ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards"
+[
+    "globalBattlePoint",
+    "playCount",
+    ...
+]
+```
+
+
 
 #### 리더보드의 metadata를 획득 
 
@@ -176,6 +219,8 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}"
   "cardinality" : 331
 }
 ```
+
+
 
 #### 특정 유저의 점수 획득
 
@@ -193,6 +238,8 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userI
 }
 ```
 
+
+
 #### 최상위 랭킹 획득
 
 Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/top?offset=<number>&limit=<number>&properties=<flag>`.
@@ -209,6 +256,8 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/top?of
 }, ...]
 ```
 
+
+
 #### 특정 유저 주변에 위치한 랭킹 정보 획득
 
 Request `GET` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}/around?limit=<number>&properties=<flag>`
@@ -224,6 +273,8 @@ $ curl "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userI
    }
 }, ...]
 ```
+
+
 
 ### PUT
 
@@ -242,15 +293,13 @@ $ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/
 -d '{
   "score" : 100
 }'
-```
 
-Response
-
-```bash
 {
     "prevScore": 0
 }
 ```
+
+
 
 #### 서비스에 범위의 유저 속성 갱신
 
@@ -263,6 +312,8 @@ $ curl -XPUT "https://API-DOMAIN/STAGE/{serviceId}/users/{userId}" \
 -d '{ "properties": { "nickname" : "John Doe" } }'
 ```
 
+
+
 ### DELETE
 
 #### 유저 점수 삭제
@@ -272,6 +323,8 @@ Request `DELETE` to `/{serviceId}/leaderboards/{leaderBoardId}/{userId}`
 ```bash
 $ curl -XDELETE "https://API-DOMAIN/STAGE/{serviceId}/leaderboards/{leaderBoardId}/{userId}"
 ```
+
+
 
 #### 리더보드 제거
 

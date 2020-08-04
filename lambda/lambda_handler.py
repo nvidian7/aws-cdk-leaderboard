@@ -82,7 +82,9 @@ def get_top_rank_scores(event, service_id, leader_board_id):
     if limit <= 0:
         raise ValueError("limit parameter must be positive value.")
 
-    # limit fetch count to prevent too huge fetch
+    if offset <= 0:
+        raise ValueError("limit parameter must be positive value.")
+
     limit = min(limit, MAX_FETCH_COUNT)
 
     rank_data = redis_client.zrevrange(leaderboard_str(service_id, leader_board_id), offset, offset+limit-1, withscores=True)
@@ -223,6 +225,26 @@ def delete_leader_board(event, service_id, leader_board_id):
 # @lambda_handler.handle("get")
 # def get_default_handle(event):
 #     return event
+
+@lambda_handler.handle("get", path="/<string:service_id>/leaderboards")
+def delete_leader_board(event, service_id):
+    auth_token = event.get("headers", {}).get("X-Auth", "")
+
+    query_param_dict = event.get("json", {}).get("query", {})
+    # if exlicit limit query parameter not exists then apply fetch default count
+    limit = query_param_dict.get("limit", DEFAULT_FETCH_COUNT)
+
+    if limit < 0:
+        raise ValueError("limit parameter must be positive value.")
+
+    if auth_token != ADMIN_SECRET_TOKEN:
+        raise AccessDeniedException("Invalid authentication")
+
+    scan_responses = redis_client.scan(count=limit, match=f'{service_id}:leaderboard:*:timestamp')
+
+    response = [k.split(":")[2] for k in scan_responses[1:][0]]
+
+    return response
 
 
 def handler(event, context):
