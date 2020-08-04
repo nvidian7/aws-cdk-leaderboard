@@ -154,6 +154,7 @@ top 랭킹 조회에서 획득을 시작할 offset을 입력합니다. 예를 �
 
 ## Common Response
 
+- `HTTP 200 OK` : 요청의 처리에 성공한 경우
 - `HTTP 400 Error` : 잘못된 요청이나 범위를 벗어난 요청인 경우의 응답입니다 ( 예를들면, 최고 점수 갱신 API에 음수를 입력 )
 - `HTTP 403 Error` : 관리용으로 제공하는 `리더보드 삭제 API`의 `token` 인증이 실패한 경우
 - `HTTP 404 Error` : 존재하지 않는 유저의 점수와 랭킹을 요청한 경우입니다. 잘못된 URL호출이 아닌 API에서 404 Error를 응답하는 경우에는 response body에 포함된 `message` 필드를 참조하여 문제를 해결하세요.
