@@ -57,26 +57,21 @@ class LeaderBoardStack(core.Stack):
         lambda_function = _lambda.Function(self, "LeaderBoardFunction",
                                            handler='lambda_handler.handler',
                                            runtime=_lambda.Runtime.PYTHON_3_8,
-                                           code=_lambda.Code.from_asset(
-                                               'lambda'),
+                                           code=_lambda.Code.from_asset('lambda'),
                                            memory_size=128,
                                            vpc=vpc,
                                            security_group=security_group,
                                            timeout=core.Duration.seconds(10),
                                            log_retention=_logs.RetentionDays.ONE_WEEK,
-                                           layers=[self.create_dependencies_layer("tg-leaderboard", "lambda")])
+                                           layers=[self.create_dependencies_layer("leaderboard", "lambda")])
 
         lambda_function.add_environment("REDIS_HOST", elasticache_host)
         lambda_function.add_environment("REDIS_PORT", elasticache_port)
-        lambda_function.add_environment(
-            "ADMIN_SECRET_TOKEN", environment.ADMIN_SECRET_TOKEN)
-        lambda_function.add_environment(
-            "DEFAULT_FETCH_COUNT", str(environment.DEFAULT_FETCH_COUNT))
-        lambda_function.add_environment(
-            "MAX_FETCH_COUNT", str(environment.MAX_FETCH_COUNT))
+        lambda_function.add_environment("ADMIN_SECRET_TOKEN", environment.ADMIN_SECRET_TOKEN)
+        lambda_function.add_environment("DEFAULT_FETCH_COUNT", str(environment.DEFAULT_FETCH_COUNT))
+        lambda_function.add_environment("MAX_FETCH_COUNT", str(environment.MAX_FETCH_COUNT))
 
-        base_api = _apigw.RestApi(
-            self, 'LeaderBoardApi', rest_api_name='LeaderBoardApi')
+        base_api = _apigw.RestApi(self, 'LeaderBoardApi', rest_api_name='LeaderBoardApi')
 
         root_api = base_api.root
         entity_lambda_integration = _apigw.LambdaIntegration(lambda_function, proxy=True, integration_responses=[
@@ -157,8 +152,7 @@ class LeaderBoardStack(core.Stack):
         # A toy input event.  You can add multiple inputs/targets, for example
         # scheduling many servers to be scanned by a scheduled lambda in parallel
         input_event = _events.RuleTargetInput.from_object(dict(foo="bar"))
-        rule.add_target(_event_targets.LambdaFunction(
-            lambda_fn, event=input_event))
+        rule.add_target(_event_targets.LambdaFunction(lambda_fn, event=input_event))
 
 
 app = core.App()
